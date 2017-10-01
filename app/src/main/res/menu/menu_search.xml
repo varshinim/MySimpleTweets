@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.codepath.apps.restclienttemplate.Activity.TimelineActivity">
+
+    <item android:id="@+id/twitter"
+        android:orderInCategory="100"
+        android:title="@string/twitter"
+        android:icon="@drawable/twitter_icon"
+        app:showAsAction="always|collapseActionView"/>
+
+    <item
+        android:id="@+id/compose"
+        android:orderInCategory="200"
+        android:title="@string/compose"
+        android:icon="@drawable/compose_icon"
+        app:showAsAction="ifRoom|collapseActionView" />
+
+</menu>
