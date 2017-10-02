@@ -2,6 +2,7 @@ package com.codepath.apps.restclienttemplate.models;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.parceler.Parcel;
 
 import java.text.DateFormat;
 import java.text.FieldPosition;
@@ -15,6 +16,7 @@ import java.util.SimpleTimeZone;
 import static android.R.attr.format;
 import static com.loopj.android.http.AsyncHttpClient.log;
 
+@Parcel
 public class Tweet {
     // list out the attributes
     private String body;
@@ -47,6 +49,8 @@ public class Tweet {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public Tweet (){}
 
     public Date getCreatedAt() {
         Date date = null;

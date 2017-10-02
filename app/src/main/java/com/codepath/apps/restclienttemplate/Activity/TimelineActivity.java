@@ -1,7 +1,10 @@
 package com.codepath.apps.restclienttemplate.Activity;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -9,6 +12,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 
 import com.codepath.apps.restclienttemplate.Adapter.TweetAdapter;
@@ -24,6 +28,7 @@ import com.loopj.android.http.JsonHttpResponseHandler;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.parceler.Parcels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,11 +37,14 @@ import cz.msebera.android.httpclient.Header;
 
 import static android.R.attr.offset;
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
+import static com.codepath.apps.restclienttemplate.R.id.swipeContainer;
+import static com.loopj.android.http.AsyncHttpClient.log;
 
 public class TimelineActivity extends AppCompatActivity implements ComposeTweetDialogFragment.ComposeTweetDialogListener{
 
     // Store a member variable for the listener
     private InfiniteScrollListener scrollListener;
+    private SwipeRefreshLayout swipeContainer;
 
     private TwitterClient client;
     TweetAdapter tweetAdapter;
@@ -58,8 +66,23 @@ public class TimelineActivity extends AppCompatActivity implements ComposeTweetD
         setSupportActionBar(toolbar);
 
         setupViews();
-        populateTimeline(0);
+        populateTimeline(false);
         getUser();
+
+        swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                populateTimeline(true);
+            }
+        });
+        // Configure the refreshing colors
+        swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+
 
         scrollListener = new InfiniteScrollListener(linearLayoutManager) {
             @Override
@@ -78,14 +101,30 @@ public class TimelineActivity extends AppCompatActivity implements ComposeTweetD
     // Append the next page of data into the adapter
     // This method probably sends out a network request and appends new data items to your adapter.
     public void loadNextDataFromApi(int offset) {
-        populateTimeline(offset);
+        populateTimeline(false);
         // tweetAdapter.notifyItemInserted(tweets.size()-1);
     }
 
     public void setupViews(){
         tweets = new ArrayList<>();  // instantiate the arratList( data source)
-        tweetAdapter = new TweetAdapter(tweets);  // construct the adapter form this datasource
         rvTweets = (RecyclerView) findViewById(R.id.rvTweet);   // find the recyclerView
+        //hook up listener for grid click
+        TweetAdapter.RecyclerViewClickListener listener = new TweetAdapter.RecyclerViewClickListener(){
+            @Override
+            public void recyclerViewListClicked(View v, int position) {
+                // create an intent to display the article
+                Log.d("onClicked: ", ""+ position);
+                Intent i = new Intent(getApplicationContext(), TweetActivity.class);
+                // get the article to display
+                Tweet tweet = tweets.get(position);
+                // pass that article into intent
+                i.putExtra("Tweet", Parcels.wrap(tweet));
+                // launch the activity
+                startActivity(i);
+            }
+        };
+
+        tweetAdapter = new TweetAdapter(this, tweets, listener);  // construct the adapter form this datasource
         linearLayoutManager = new LinearLayoutManager(this);  // set layout manager
         rvTweets.setLayoutManager(linearLayoutManager);  // attach layout manager to RecyclerView
         rvTweets.setAdapter(tweetAdapter);   // Attach the adapter to the recyclerview to populate items
@@ -145,10 +184,15 @@ public class TimelineActivity extends AppCompatActivity implements ComposeTweetD
         });
     }
 
-    public void populateTimeline(int count){
+    public void populateTimeline(final boolean isRefresh){
 
-        long maxId = tweets.isEmpty() ? -1:tweets.get(count-1).getUid();
-        client.getHomeTimeline(maxId, new JsonHttpResponseHandler(){
+        long maxId = tweets.isEmpty() ? -1:tweets.get(tweets.size()-1).getUid();
+        long sinceId = isRefresh? tweets.get(0).getUid(): -1;
+
+        if (isRefresh){
+            Log.d("Refresh","swiped");
+        }
+        client.getHomeTimeline(maxId, sinceId, new JsonHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 //Log.d("TwitterClient", response.toString());
@@ -157,15 +201,7 @@ public class TimelineActivity extends AppCompatActivity implements ComposeTweetD
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                //Log.d("TwitterClient", response.toString());
-                //super.onSuccess(statusCode, headers, response);
-
-                //iterate through JSON array
-                // for each entry deserialize the JSON object
                 for(int i=0;i<response.length();i++){
-                    // convert each tweet object to a Tweet model
-                    // add that Tweet model to our data source
-                    // notify the adapter that we have added an item
                     try{
                         Tweet tweet = Tweet.fromJSON(response.getJSONObject(i));
                         tweets.add(tweet);
@@ -173,6 +209,10 @@ public class TimelineActivity extends AppCompatActivity implements ComposeTweetD
                     }catch (JSONException e){
                         e.printStackTrace();
                     }
+                }
+
+                if (isRefresh) {
+                    swipeContainer.setRefreshing(false);
                 }
             }
 

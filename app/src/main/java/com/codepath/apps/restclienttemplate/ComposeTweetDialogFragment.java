@@ -3,6 +3,8 @@ package com.codepath.apps.restclienttemplate;
 import android.media.Image;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatDialogFragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +18,8 @@ import com.bumptech.glide.Glide;
 import com.codepath.apps.restclienttemplate.models.Tweet;
 import com.codepath.apps.restclienttemplate.models.User;
 
+import org.w3c.dom.Text;
+
 import java.util.Calendar;
 import java.util.Date;
 
@@ -26,6 +30,7 @@ public class ComposeTweetDialogFragment extends AppCompatDialogFragment{
     TextView name;
     TextView screenName;
     EditText etTweet;
+    TextView tvCharCount;
     Button btnTweet;
     User user;
 
@@ -46,6 +51,8 @@ public class ComposeTweetDialogFragment extends AppCompatDialogFragment{
         screenName = (TextView) mView.findViewById(R.id.tvScreenName);
         screenName.setText(user.getScreenName());
         etTweet = (EditText) mView.findViewById(R.id.etTweet);
+        etTweet.addTextChangedListener(mTextEditorWatcher);
+        tvCharCount = (TextView) mView.findViewById(R.id.tvCharCount);
         btnTweet = (Button) mView.findViewById(R.id.btnTweet);
 
 
@@ -74,5 +81,19 @@ public class ComposeTweetDialogFragment extends AppCompatDialogFragment{
 
         this.user = user;
     }
+
+    private final TextWatcher mTextEditorWatcher = new TextWatcher() {
+
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            //This sets a textview to the current length
+            tvCharCount.setText(140 - s.toString().length()+"");
+        }
+
+        public void afterTextChanged(Editable s) {
+        }
+    };
 
 }

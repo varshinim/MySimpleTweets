@@ -8,5 +8,6 @@
     <string name="compose">Compose</string>
     <string name="twitter">Twitter</string>
     <string name="title_activity_timeline">TimelineActivity</string>
+    <string name="title_activity_tweet">TweetActivity</string>
 
 </resources>
